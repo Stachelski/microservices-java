@@ -1,5 +1,7 @@
 package br.edu.atitus.productservice.controllers;
 
+import br.edu.atitus.productservice.clients.CurrencyClient;
+import br.edu.atitus.productservice.clients.CurrencyResponse;
 import br.edu.atitus.productservice.dtos.ProductDTO;
 import br.edu.atitus.productservice.entities.ProductEntity;
 import br.edu.atitus.productservice.repositories.ProductRepository;
@@ -16,9 +18,11 @@ import br.edu.atitus.productservice.repositories.ProductRepository;
 public class ProductController {
 
     private final ProductRepository repository;
+    private final CurrencyClient currencyClient;
 
-    public ProductController(ProductRepository repository) {
+    public ProductController(ProductRepository repository, CurrencyClient currencyClient) {
         this.repository = repository;
+        this.currencyClient = currencyClient;
     }
 
     @Value("${server.port}")
@@ -32,9 +36,17 @@ public class ProductController {
         ProductEntity entity = repository.findById(id)
                 .orElseThrow(() -> new Exception("Product not found!"));
 
-        Double convertedPrice = null;
+        Double convertedPrice;
         String environment = "Product-service running on port: " + port;
         String requestCurrency = targetCurrency;
+
+        if (targetCurrency.equals(entity.getCurrency())) {
+            convertedPrice = entity.getPrice();
+        } else {
+            CurrencyResponse currency = currencyClient.getCurrency(entity.getCurrency(),targetCurrency);
+            convertedPrice = currency.conversionRate() * entity.getPrice();
+            environment = environment + " - " + currency.environment();
+        }
 
         ProductDTO dto = new ProductDTO(
                 entity.getId(),
