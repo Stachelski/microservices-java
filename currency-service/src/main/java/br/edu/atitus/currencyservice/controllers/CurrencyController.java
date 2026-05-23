@@ -18,6 +18,9 @@ public class CurrencyController {
     @Value("${server.port}")
     private String port;
 
+    @Value("${convert.sleep:0}")
+    private int sleep;
+
     private final CurrencyRepository repository;
     private final Environment environment;
 
@@ -30,6 +33,8 @@ public class CurrencyController {
     public ResponseEntity<CurrencyDTO> getConvert(
             @RequestParam String source,
             @RequestParam String target) throws Exception {
+
+        Thread.sleep(sleep);
 
         source = source.toUpperCase();
         target = target.toUpperCase();
